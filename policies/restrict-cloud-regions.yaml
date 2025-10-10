@@ -1,0 +1,64 @@
+---
+# Policy: Restrict cloud regions for compliance
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sallowedregions
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "Restricts cloud resources to allowed regions"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sAllowedRegions
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            regions:
+              type: array
+              description: "List of allowed regions"
+              items:
+                type: string
+  
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8sallowedregions
+
+      violation[{"msg": msg}] {
+        input.review.object.spec.region
+        region := input.review.object.spec.region
+        allowed := {r | r := input.parameters.regions[_]}
+        not region_allowed(region, allowed)
+        msg := sprintf("Region '%v' is not allowed. Allowed regions: %v", [region, allowed])
+      }
+
+      region_allowed(region, allowed) {
+        allowed[region]
+      }
+---
+# Aplicar restrição de regiões
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sAllowedRegions
+metadata:
+  name: allowed-cloud-regions
+  labels:
+    app.kubernetes.io/managed-by: argocd
+spec:
+  match:
+    kinds:
+    - apiGroups: ["platform.example.com"]
+      kinds:
+      - Database
+      - Network
+  
+  parameters:
+    regions:
+    - us-east-1
+    - us-west-2
+    - eu-west-1
+    - sa-east-1  # São Paulo
+

@@ -1,0 +1,33 @@
+---
+# Resource Quotas para ambiente de desenvolvimento
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: dev-resource-quota
+  namespace: dev
+  labels:
+    environment: dev
+    app.kubernetes.io/managed-by: argocd
+spec:
+  hard:
+    # Compute resources
+    requests.cpu: "20"
+    requests.memory: 40Gi
+    limits.cpu: "40"
+    limits.memory: 80Gi
+    
+    # Storage
+    requests.storage: 100Gi
+    persistentvolumeclaims: "10"
+    
+    # Objects
+    count/configmaps: "50"
+    count/secrets: "50"
+    count/services: "20"
+    count/deployments.apps: "20"
+    
+    # Crossplane Claims
+    count/databases.platform.example.com: "5"
+    count/buckets.platform.example.com: "10"
+    count/networks.platform.example.com: "2"
+

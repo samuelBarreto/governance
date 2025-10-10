@@ -1,0 +1,68 @@
+---
+# Policy: Validate cost center format
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8svalidcostcenter
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "Validates cost center format and existence"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sValidCostCenter
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            pattern:
+              type: string
+              description: "Regex pattern for cost center validation"
+            validCostCenters:
+              type: array
+              description: "List of valid cost centers"
+              items:
+                type: string
+  
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8svalidcostcenter
+
+      violation[{"msg": msg}] {
+        costCenter := input.review.object.spec.costCenter
+        not valid_cost_center(costCenter)
+        msg := sprintf("Cost center '%v' is not valid. Must be one of: %v", [costCenter, input.parameters.validCostCenters])
+      }
+
+      valid_cost_center(cc) {
+        cc == input.parameters.validCostCenters[_]
+      }
+---
+# Aplicar validação de cost center
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sValidCostCenter
+metadata:
+  name: valid-cost-center
+  labels:
+    app.kubernetes.io/managed-by: argocd
+spec:
+  match:
+    kinds:
+    - apiGroups: ["platform.example.com"]
+      kinds:
+      - Database
+      - Network
+      - Bucket
+  
+  parameters:
+    validCostCenters:
+    - CC-001
+    - CC-002
+    - CC-003
+    - CC-PLATFORM
+    - CC-DEVELOPMENT
+    - CC-PRODUCTION
+

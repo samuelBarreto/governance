@@ -1,0 +1,61 @@
+---
+# OPA Gatekeeper Policy: Require mandatory labels for governance
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredlabels
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "Requires resources to have specified labels for governance"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredLabels
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            labels:
+              type: array
+              description: "List of required label keys"
+              items:
+                type: string
+  
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8srequiredlabels
+
+      violation[{"msg": msg, "details": {"missing_labels": missing}}] {
+        provided := {label | input.review.object.metadata.labels[label]}
+        required := {label | label := input.parameters.labels[_]}
+        missing := required - provided
+        count(missing) > 0
+        msg := sprintf("Resource is missing required labels: %v", [missing])
+      }
+---
+# Aplicar policy para Claims Crossplane
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-governance-labels
+  labels:
+    app.kubernetes.io/managed-by: argocd
+spec:
+  match:
+    kinds:
+    - apiGroups: ["platform.example.com"]
+      kinds:
+      - Database
+      - Network
+      - Bucket
+  
+  parameters:
+    labels:
+    - environment
+    - cost-center
+    - owner
+    - team
+

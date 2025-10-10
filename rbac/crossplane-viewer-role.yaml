@@ -1,0 +1,99 @@
+---
+# ClusterRole para visualizar recursos Crossplane
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-viewer
+  labels:
+    app.kubernetes.io/managed-by: argocd
+    rbac.authorization.k8s.io/aggregate-to-view: "true"
+rules:
+# Crossplane Core
+- apiGroups:
+  - apiextensions.crossplane.io
+  resources:
+  - compositeresourcedefinitions
+  - compositions
+  verbs:
+  - get
+  - list
+  - watch
+
+# Platform APIs
+- apiGroups:
+  - platform.example.com
+  resources:
+  - databases
+  - networks
+  - buckets
+  - xdatabases
+  - xnetworks
+  - xbuckets
+  verbs:
+  - get
+  - list
+  - watch
+
+# Provider Resources
+- apiGroups:
+  - pkg.crossplane.io
+  resources:
+  - providers
+  - providerrevisions
+  verbs:
+  - get
+  - list
+  - watch
+---
+# ClusterRole para criar Claims
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-claim-creator
+  labels:
+    app.kubernetes.io/managed-by: argocd
+rules:
+# Criar Claims
+- apiGroups:
+  - platform.example.com
+  resources:
+  - databases
+  - networks
+  - buckets
+  verbs:
+  - create
+  - get
+  - list
+  - watch
+  - update
+  - patch
+  - delete
+
+# Ver status das claims
+- apiGroups:
+  - platform.example.com
+  resources:
+  - databases/status
+  - networks/status
+  - buckets/status
+  verbs:
+  - get
+  - list
+  - watch
+---
+# ClusterRole para Platform Admin
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crossplane-platform-admin
+  labels:
+    app.kubernetes.io/managed-by: argocd
+rules:
+# Full access to Crossplane resources
+- apiGroups:
+  - "*"
+  resources:
+  - "*"
+  verbs:
+  - "*"
+

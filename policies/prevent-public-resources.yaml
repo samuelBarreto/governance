@@ -1,0 +1,69 @@
+---
+# Policy: Prevent publicly accessible resources in production
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: k8sdenypublicaccess
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    description: "Denies publicly accessible resources in production"
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sDenyPublicAccess
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            environments:
+              type: array
+              description: "Environments where public access is denied"
+              items:
+                type: string
+  
+  targets:
+  - target: admission.k8s.gatekeeper.sh
+    rego: |
+      package k8sdenypublicaccess
+
+      violation[{"msg": msg}] {
+        env := input.review.object.spec.environment
+        restricted_env(env)
+        is_public(input.review.object)
+        msg := sprintf("Public access is not allowed in %v environment", [env])
+      }
+
+      restricted_env(env) {
+        env == input.parameters.environments[_]
+      }
+
+      is_public(obj) {
+        obj.spec.publiclyAccessible == true
+      }
+
+      is_public(obj) {
+        obj.spec.publicAccess == true
+      }
+---
+# Aplicar restrição de acesso público em produção
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sDenyPublicAccess
+metadata:
+  name: deny-public-in-production
+  labels:
+    app.kubernetes.io/managed-by: argocd
+spec:
+  match:
+    kinds:
+    - apiGroups: ["platform.example.com"]
+      kinds:
+      - Database
+      - Bucket
+  
+  parameters:
+    environments:
+    - prod
+    - production
+
