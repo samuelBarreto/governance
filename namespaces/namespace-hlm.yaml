@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: hlm
+  labels:
+    environment: homologation
+    cost-center: engineering
+    managed-by: argocd
+  annotations:
+    description: "Homologation/staging environment for pre-production testing"
+

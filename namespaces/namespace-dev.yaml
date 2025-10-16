@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    environment: development
+    cost-center: engineering
+    managed-by: argocd
+  annotations:
+    description: "Development environment for testing and experimentation"
+

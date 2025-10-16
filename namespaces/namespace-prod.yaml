@@ -1,0 +1,12 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    environment: production
+    cost-center: operations
+    managed-by: argocd
+  annotations:
+    description: "Production environment - handle with care"
+
