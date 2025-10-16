@@ -1,0 +1,26 @@
+---
+# Aplicar policy para Claims Crossplane
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredLabels
+metadata:
+  name: require-governance-labels
+  labels:
+    app.kubernetes.io/managed-by: argocd
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"  # Aplicar DEPOIS dos Templates
+spec:
+  match:
+    kinds:
+    - apiGroups: ["platform.example.com"]
+      kinds:
+      - Database
+      - Network
+      - Bucket
+  
+  parameters:
+    labels:
+    - environment
+    - cost-center
+    - owner
+    - team
+
